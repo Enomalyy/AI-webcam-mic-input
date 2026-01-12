@@ -16,11 +16,12 @@ Admin Capable: Built to interact with UAC prompts and Task Manager, assumuing yo
 # Installation
 Option 1: Compiled Executable (Recommended)
 
-    Download AIMouse_Final.exe.
 
-    Place it in your desired folder (or Windows Startup folder).
+Download AIMouse_Final.exe: https://github.com/Enomalyy/AI-webcam-mic-input/releases
+Include the settings.json file wherever you place the .exe.
+Place it in your desired folder (or Windows Startup folder).
 
-    Run it. It will create a settings.json file automatically.
+
 
 Option 2: Run from Source
 
