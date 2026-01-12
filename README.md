@@ -24,12 +24,13 @@ Option 1: Compiled Executable (Recommended)
 
 Option 2: Run from Source
 
-    Clone the repository.
+Clone the repository:
 
-    Install dependencies:
-    Bash
+    DO IT
 
-pip install opencv-python mediapipe pyautogui pyaudio keyboard sounddevice faster-whisper pystray pillow webrtcvad-wheels
+Install dependencies:    
+
+    pip install opencv-python mediapipe pyautogui pyaudio keyboard sounddevice faster-whisper pystray pillow webrtcvad-wheels
 
 Run the script:
 
