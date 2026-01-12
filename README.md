@@ -1,5 +1,5 @@
 # AI-webcam-mic-input
-replaces the need for a A python project for physical mouse and keyboard replacement by using computer vision to track hand gestures and local AI for voice dictation. 
+Replaces the need for a A python project for physical mouse and keyboard replacement by using computer vision to track hand gestures and local AI for voice dictation. 
 
 (this project essentially demonestrates the use of MediaPipe Hands (Google) and Faster-Whisper (Int8 Quantization), along with WebRTCVAD.)
 
