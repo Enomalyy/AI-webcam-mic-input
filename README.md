@@ -45,7 +45,7 @@ For control of programs requiring provledges to mouse over (e.g. Task Manager) r
 (imagine a finger gun, point it upwards, this is the starting position)
 
 Index finger: control mouse.
-Thumb to middle finger joint - click (imagine a finger gun, point it upwards)
+Thumb to middle finger joint - click (imagine a finger gun, the thumb hammer then comes down on the middle finger joint.)
 Pinkie raise: right click
 Middle finger raise - open windows keyobard (tabtip.exe) using some COM black magic
 Thumb to pinkie - voice transciption activation.
