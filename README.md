@@ -36,6 +36,8 @@ Run the script:
 
     python main.pyw
 
+To get some messages for debug, rename to main.py. 
+
 For control of programs requiring provledges to mouse over (e.g. Task Manager) run as administrator.
 
 # Gestures:
