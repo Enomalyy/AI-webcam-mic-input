@@ -1,0 +1,21 @@
+# Python Artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# PyInstaller Build Folders (Don't upload these!)
+build/
+dist/
+*.exe
+*.pkg
+*.spec
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# IDE Settings
+.vscode/
+.idea/
