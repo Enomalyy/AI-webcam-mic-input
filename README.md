@@ -11,7 +11,7 @@ Useful for mounted monitors, or for projects with minimal need for direct contac
 
 Faster-Whisper Integration: Includes a VAD (Voice Activity Detection) system that records audio only when a specific hand gesture is held, then transcribes it using a quantized Whisper model.  this is awesome.
 
-Admin Capable: Built to interact with UAC prompts and Task Manager, assumuing you grant admin privledges.
+Admin Capable: Built to interact with Windows itself e.g. Task Manager, assuming you grant admin privledges.
 
 # Installation
 Option 1: Compiled Executable (Recommended)
@@ -39,7 +39,7 @@ Run the script:
 
 To get some messages for debug, rename to main.py. 
 
-For control of programs requiring provledges to mouse over (e.g. Task Manager) run as administrator.
+For control of programs requiring privledges to mouse over (e.g. Task Manager) run as administrator.
 
 # Gestures:
 (imagine a finger gun, point it upwards, this is the starting position)
