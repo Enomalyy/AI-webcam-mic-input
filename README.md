@@ -3,7 +3,7 @@ Physical mouse and keyboard replacement by using computer vision to track hand g
 
 Offline, low resource usage solution for Windows 10 computers lacking, um, everything. 
 
-(This project essentially demonstrates the use of offline AI running on older hardware -  Google's MediaPipe Hands and Faster-Whisper (Int8 Quantization), along with WebRTCVAD to buffer the text for better voice detection.)
+(This project essentially demonstrates the use of offline AI running on older hardware -  Google's MediaPipe Hands and Faster-Whisper (Int8 Quantization), along with WebRTCVAD to buffer the auido for better voice to text.)
 
 Runs silently in the System Tray with a "Headless" option (no video feed) to save resources.
 
