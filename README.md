@@ -1,7 +1,7 @@
 # AI-webcam-mic-input
 Physical mouse and keyboard replacement by using computer vision to track hand gestures and local AI for voice dictation, optimized (as best I can) for lower end systems running windows 10. 
 
-(this project essentially demonestrates the use of MediaPipe Hands (Google) and Faster-Whisper (Int8 Quantization), along with WebRTCVAD.)
+(this project essentially demonstrates the use of MediaPipe Hands (Google) and Faster-Whisper (Int8 Quantization), along with WebRTCVAD.)
 
 Runs silently in the System Tray with a "Headless" option (no video feed) to save resources.
 
