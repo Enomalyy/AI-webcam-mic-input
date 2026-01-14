@@ -29,7 +29,9 @@ Option 2: Run from Source
     Install dependencies:
     Bash
 
-pip install opencv-python mediapipe pyautogui pyaudio keyboard sounddevice faster-whisper pystray pillow webrtcvad-wheels
+Install dependencies:
+
+    pip install opencv-python mediapipe pyautogui pyaudio keyboard sounddevice faster-whisper pystray pillow webrtcvad-wheels
 
 Run the script:
 
