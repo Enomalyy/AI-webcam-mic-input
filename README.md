@@ -33,6 +33,11 @@ Run the script:
 
     python main.pyw
 
+optionally, compile using:
+
+    pyinstaller --noconfirm --onedir --windowed --name "AIMousePro" --icon "icon.ico" --additional-hooks-dir=. --collect-all "mediapipe" --hidden-import "faster_whisper" --hidden-import "pystray" --hidden-import "PIL" --hidden-import "cv2" --add-data "config.py;." main.py
+    # Note this is uses a custom hook to overcome webrtcvad windows issues.
+
 For control of programs requiring provledges to mouse over (e.g. Task Manager) run as administrator.
 
 # Gestures:
