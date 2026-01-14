@@ -22,7 +22,6 @@ COMPUTE_TYPE = "int8"
 
 # --- GLOBALS ---
 model = None
-# Change this line
 audio_queue = queue.Queue(maxsize=500) # Limit buffer to ~10 seconds of audio
 vad = webrtcvad.Vad(2) # Mode 2 = Balanced (Aggressive enough to filter breathing)
 
@@ -79,6 +78,12 @@ def transcribe_buffer(buffer_bytes):
         segments, info = model.transcribe(audio_float32, beam_size=5)
         
         text = " ".join([seg.text for seg in segments]).strip()
+        
+        # --- SMART PUNCTUATION LOGIC ---
+        # If text is short (command-like) and ends with a period, remove it.
+        if len(text) < 25 and text.endswith("."):
+            text = text[:-1]
+        # -------------------------------
         
         if text:
             print(f"[Voice] TYPING: {text}")

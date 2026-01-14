@@ -1,13 +1,14 @@
 {
     "SENSITIVITY": 134,
-    "SMOOTHING": 5.0,
-    "CLICK_DIST": 27,
-    "RELEASE_DIST": 39,
+    "SMOOTHING": 3.0,
+    "CLICK_DIST": 20,
+    "RELEASE_DIST": 28,
     "DEPTH_SCALE": 0.8,
     "RESOLUTION_ID": 0,
     "MODEL_COMPLEXITY": 0,
-    "HEADLESS_DEFAULT": false,
+    "HEADLESS_DEFAULT": true,
     "AUTO_START": true,
     "AUDIO_START": true,
-    "voice_enabled": true
+    "voice_enabled": true,
+    "CAMERA_FPS": 35
 }

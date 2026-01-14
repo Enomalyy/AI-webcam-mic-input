@@ -20,6 +20,7 @@ SMOOTHING = 4.0
 CLICK_DIST = 27
 RELEASE_DIST = 40
 DEPTH_SCALE = 0.8
+CAMERA_FPS = 30  # Default to 30
 
 # --- SYSTEM STATE ---
 running = False         
@@ -52,7 +53,8 @@ def save_settings():
         "HEADLESS_DEFAULT": HEADLESS_DEFAULT,
         "AUTO_START": AUTO_START,
         "AUDIO_START": AUDIO_START, # <--- NEW: Save the preference
-        "voice_enabled": voice_enabled 
+        "voice_enabled": voice_enabled ,
+        "CAMERA_FPS": CAMERA_FPS
     }
     try:
         with open(SETTINGS_FILE, 'w') as f:
@@ -64,7 +66,8 @@ def save_settings():
 def load_settings():
     global SENSITIVITY, SMOOTHING, CLICK_DIST, RELEASE_DIST, DEPTH_SCALE
     global RESOLUTION_ID, MODEL_COMPLEXITY, HEADLESS_DEFAULT, AUTO_START, AUDIO_START
-    global headless_mode, voice_enabled
+    global headless_mode, voice_enabled 
+    global CAMERA_FPS
     
     if os.path.exists(SETTINGS_FILE):
         try:
@@ -81,6 +84,7 @@ def load_settings():
             HEADLESS_DEFAULT = data.get("HEADLESS_DEFAULT", HEADLESS_DEFAULT)
             AUTO_START = data.get("AUTO_START", AUTO_START)
             AUDIO_START = data.get("AUDIO_START", AUDIO_START) # <--- NEW: Load preference
+            CAMERA_FPS = data.get("CAMERA_FPS", 30)
             
             # Use AUDIO_START to determine initial voice state
             # If AUDIO_START is True, we force voice_enabled to True

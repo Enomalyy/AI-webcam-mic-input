@@ -1,6 +1,7 @@
 import tkinter as tk
 import config
 import pyautogui
+import camera  # Essential import
 
 # Define globals
 root = None
@@ -67,7 +68,6 @@ class StatusOverlay:
 
         self.top.after(40, self.update_overlay)
 
-# --- CRITICAL NEW FUNCTION: FORCE SYNC ---
 def commit_settings_to_config():
     """Reads all GUI variables and pushes them to config.py"""
     try:
@@ -99,7 +99,7 @@ def create_window(start_callback, stop_callback, headless_callback):
     
     root = tk.Tk()
     root.title("AI Mouse")
-    root.geometry("320x720")
+    root.geometry("320x760") # Increased height slightly for new slider
     
     default_head = getattr(config, 'HEADLESS_DEFAULT', True)
     default_res = getattr(config, 'RESOLUTION_ID', 0)
@@ -112,18 +112,26 @@ def create_window(start_callback, stop_callback, headless_callback):
     var_voice = tk.IntVar(value=1 if default_voice else 0)
     var_audio_start = tk.IntVar(value=1 if default_audio_start else 0)
 
+    # --- RESOLUTION LOGIC FIX ---
+    def on_res_change():
+        config.RESOLUTION_ID = var_res.get()
+        print(f"Resolution set to ID: {config.RESOLUTION_ID}")
+
     frame_top = tk.Frame(root)
     frame_top.pack(pady=10)
-    tk.Radiobutton(frame_top, text="Low Res", variable=var_res, value=0, command=update_config_from_ui).pack(side="left")
-    tk.Radiobutton(frame_top, text="High Res", variable=var_res, value=1, command=update_config_from_ui).pack(side="left")
     
+    # Updated command to use specific resolution handler
+    tk.Radiobutton(frame_top, text="Low Res", variable=var_res, value=0, command=on_res_change).pack(side="left")
+    tk.Radiobutton(frame_top, text="High Res", variable=var_res, value=1, command=on_res_change).pack(side="left")
+    # ----------------------------
+
     tk.Checkbutton(root, text="Headless (No Video)", variable=var_head, command=lambda: headless_callback(var_head.get())).pack()
     
     voice_frame = tk.Frame(root, bd=1, relief="sunken", padx=5, pady=5)
     voice_frame.pack(pady=5, fill="x", padx=20)
     
     tk.Checkbutton(voice_frame, text="Enable Voice Typing", variable=var_voice, command=lambda: setattr(config, 'voice_enabled', bool(var_voice.get()))).pack(anchor="w")
-    tk.Checkbutton(voice_frame, text="Auto-Start Voice at Launch", variable=var_audio_start).pack(anchor="w", padx=20) # No command needed, we sync on exit
+    tk.Checkbutton(voice_frame, text="Auto-Start Voice at Launch", variable=var_audio_start).pack(anchor="w", padx=20) 
 
     btn_frame = tk.Frame(root)
     btn_frame.pack(pady=10)
@@ -154,6 +162,21 @@ def create_window(start_callback, stop_callback, headless_callback):
     scale_depth = tk.Scale(root, from_=0.0, to=2.0, resolution=0.1, orient="horizontal", command=update_config_from_ui)
     scale_depth.set(config.DEPTH_SCALE)
     scale_depth.pack(fill="x", padx=20)
+
+    # --- FPS SLIDER SECTION ---
+    lbl_fps = tk.Label(root, text=f"Camera FPS: {config.CAMERA_FPS}", font=("Segoe UI", 10))
+    lbl_fps.pack(pady=(10, 0))
+
+    def on_fps_change(val):
+        fps_val = int(val)
+        lbl_fps.config(text=f"Camera FPS: {fps_val}")
+        # Safe update only
+        config.CAMERA_FPS = fps_val
+
+    scale_fps = tk.Scale(root, from_=10, to=60, orient=tk.HORIZONTAL, length=280, command=on_fps_change)
+    scale_fps.set(config.CAMERA_FPS) 
+    scale_fps.pack(pady=5)
+    # --------------------------
 
     root.after(500, lambda: StatusOverlay(root))
 
