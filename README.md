@@ -15,11 +15,11 @@ Faster-Whisper Integration: Includes a VAD (Voice Activity Detection) system tha
 # Installation
 Option 1: Compiled Executable (Recommended)
 
-Download AIMouse_Final.exe.
+Download AIInput.zip
 
 Place it in your desired folder (or Windows Startup folder).
 
-Run it. It will create a settings.json file automatically.
+Run it. It will create a settings.json file automatically, but the one present holds good settings.
 
 Option 2: Run from Source
 
