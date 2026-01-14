@@ -12,7 +12,7 @@ Useful for mounted monitors, or for projects with minimal need for direct contac
 
 Faster-Whisper Integration: Includes a VAD (Voice Activity Detection) system that records audio only when a specific hand gesture is held, then transcribes it using a quantized Whisper model.  this is awesome.
 
-Admin Capable: Built to interact with UAC prompts and Task Manager, assumuing you grant admin privledges.
+Admin Capable: Built to interact with UAC prompts and Task Manager, assuming you grant admin privledges. (You Should)
 
 # Installation
 Option 1: Compiled Executable (Recommended)
