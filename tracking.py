@@ -9,6 +9,33 @@ import os
 import winreg
 import ctypes
 
+# --- KEYBOARD COM SCRIPT ---
+# This forces the Windows Tablet Keyboard to toggle properly
+PS_TOGGLE_SCRIPT = r"""
+$code = @'
+using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+public class TouchKeyboardController {
+    [ComImport, Guid("4ce576fa-83dc-4F88-951c-9d0782b4e376")] class UIHostNoLaunch {}
+    [ComImport, Guid("37c994e7-432b-4834-a2f7-dce1f13b834b")] [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface ITipInvocation { void Toggle(IntPtr hwnd); }
+    [DllImport("user32.dll", SetLastError = false)] static extern IntPtr GetDesktopWindow();
+    public static void Toggle() {
+        try {
+            UIHostNoLaunch uiHost = new UIHostNoLaunch();
+            ((ITipInvocation)uiHost).Toggle(GetDesktopWindow());
+            Marshal.ReleaseComObject(uiHost);
+        } catch (COMException) {
+            Process.Start(new ProcessStartInfo("TabTip.exe") { UseShellExecute = true });
+        }
+    }
+}
+'@
+Add-Type -TypeDefinition $code -Language CSharp
+[TouchKeyboardController]::Toggle()
+"""
+
 # --- CONFIGURATION ---
 pyautogui.FAILSAFE = False
 pyautogui.PAUSE = 0
@@ -16,16 +43,13 @@ pyautogui.PAUSE = 0
 mp_hands = mp.solutions.hands
 hands = None
 pTime = 0
-last_process_time = 0  # For AI FPS capping
+last_process_time = 0 
 
 # --- STABILITY COUNTERS ---
 pinky_frames = 0
 middle_frames = 0
 voice_frames = 0        
-GESTURE_THRESHOLD = 5  
-
-# --- KEYBOARD COM SCRIPT --- (Keep your existing PS_TOGGLE_SCRIPT here)
-PS_TOGGLE_SCRIPT = r"""...""" # (Keep original)
+GESTURE_THRESHOLD = 5   
 
 def fast_move(x, y):
     ctypes.windll.user32.SetCursorPos(int(x), int(y))
@@ -39,7 +63,7 @@ def init_hand_tracking(complexity=0):
     hands = mp_hands.Hands(
         max_num_hands=1,
         model_complexity=complexity,
-        min_detection_confidence=0.7, # Slightly lower to reduce search spike
+        min_detection_confidence=0.7,
         min_tracking_confidence=0.7
     )
 
@@ -57,21 +81,16 @@ def map_range(x, in_min, in_max, out_min, out_max):
 def toggle_keyboard():
     try:
         subprocess.run(["powershell", "-Command", PS_TOGGLE_SCRIPT], creationflags=subprocess.CREATE_NO_WINDOW)
-        config.keyboard_open = not config.keyboard_open
+        config.keyboard_open = not getattr(config, 'keyboard_open', False)
     except Exception: pass
 
 def process_frame(img):
     global pTime, pinky_frames, middle_frames, voice_frames
     if not hands: return None if config.headless_mode else img
 
-    # --- 1. FLIP FIRST (CRITICAL) ---
-    # We flip immediately. This prevents the "Orientation Glitch."
+    # --- 1. FLIP FIRST ---
     img = cv2.flip(img, 1) 
     
-    # --- 2. NO SOFTWARE CAP ---
-    # We rely on camera.py having set the webcam to 30 FPS.
-    # This prevents the "Flickering Overlay" (Frame Dropping).
-
     h, w, c = img.shape
     imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     results = hands.process(imgRGB)
@@ -91,7 +110,6 @@ def process_frame(img):
         for hand_landmarks in results.multi_hand_landmarks:
             lmList = []
             for lm in hand_landmarks.landmark:
-                # lm.x is already correct because we flipped 'img' at the start
                 lmList.append([int(lm.x * w), int(lm.y * h)])
 
             if lmList:
@@ -136,21 +154,31 @@ def process_frame(img):
                         config.dragging = False
 
                 # --- C. GESTURES ---
-                # Keyboard (Middle Finger)
+                
+                # Keyboard (Middle Finger Extended, Others Down)
+                # Check: Tip above PIP, Tip above Index Tip, Tip above Ring Tip (16)
                 if (y_mid_tip < y_mid_pip - 10) and (y_mid_tip < y_index_tip) and (y_mid_tip < lmList[16][1]):
                     middle_frames += 1
-                else: middle_frames = 0
-                if middle_frames > GESTURE_THRESHOLD and not config.pinky_triggered:
-                    toggle_keyboard(); config.pinky_triggered = True
-                elif middle_frames == 0: config.pinky_triggered = False
+                else: 
+                    middle_frames = 0
+                
+                if middle_frames > GESTURE_THRESHOLD and not getattr(config, 'pinky_triggered', False):
+                    toggle_keyboard()
+                    config.pinky_triggered = True
+                elif middle_frames == 0: 
+                    config.pinky_triggered = False
 
                 # Right Click (Pinky)
                 if (y_pinky_tip < y_pinky_pip - 10) and (y_pinky_tip < lmList[16][1]):
                     pinky_frames += 1
-                else: pinky_frames = 0
+                else: 
+                    pinky_frames = 0
+                
                 if pinky_frames > GESTURE_THRESHOLD and not config.right_clicked:
-                    pyautogui.click(button='right'); config.right_clicked = True
-                elif pinky_frames == 0: config.right_clicked = False
+                    pyautogui.click(button='right')
+                    config.right_clicked = True
+                elif pinky_frames == 0: 
+                    config.right_clicked = False
 
                 # Voice (Thumb + Pinky)
                 voice_dist_sq = get_dist_sq(lmList[20], lmList[4])
@@ -164,7 +192,7 @@ def process_frame(img):
                     
                     if config.voice_active_gesture:
                          cv2.putText(display_img, "MIC ON", (x_thumb, y_thumb - 30), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0), 2)
-                    if config.pinky_triggered:
+                    if getattr(config, 'pinky_triggered', False):
                         cv2.putText(display_img, "KEYBOARD", (x_mid_tip, y_mid_tip-20), cv2.FONT_HERSHEY_PLAIN, 1.5, (255,0,255), 2)
                     if config.right_clicked:
                         cv2.putText(display_img, "R-CLICK", (x_pinky_tip, y_pinky_tip-20), cv2.FONT_HERSHEY_PLAIN, 1.5, (255,0,0), 2)

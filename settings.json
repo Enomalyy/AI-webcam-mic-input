@@ -6,9 +6,9 @@
     "DEPTH_SCALE": 0.8,
     "RESOLUTION_ID": 0,
     "MODEL_COMPLEXITY": 0,
-    "HEADLESS_DEFAULT": true,
+    "HEADLESS_DEFAULT": false,
     "AUTO_START": true,
     "AUDIO_START": true,
     "voice_enabled": true,
-    "CAMERA_FPS": 35
+    "CAMERA_FPS": 26
 }
