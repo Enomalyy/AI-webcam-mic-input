@@ -12,23 +12,18 @@ Useful for mounted monitors, or for projects with minimal need for direct contac
 
 Faster-Whisper Integration: Includes a VAD (Voice Activity Detection) system that records audio only when a specific hand gesture is held, then transcribes it using a quantized Whisper model.  this is awesome.
 
-Admin Capable: Built to interact with UAC prompts and Task Manager, assuming you grant admin privledges. (You should)
-
 # Installation
 Option 1: Compiled Executable (Recommended)
 
-    Download AIMouse_Final.exe.
+Download AIMouse_Final.exe.
 
-    Place it in your desired folder (or Windows Startup folder).
+Place it in your desired folder (or Windows Startup folder).
 
-    Run it. It will create a settings.json file automatically.
+Run it. It will create a settings.json file automatically.
 
 Option 2: Run from Source
 
-    Clone the repository.
-
-    Install dependencies:
-    Bash
+Clone the repository.
 
 Install dependencies:
 
@@ -61,4 +56,7 @@ The application generates a settings.json file on the first launch. You can edit
 
     HEADLESS_DEFAULT: Set to true to start without the camera window (saves CPU).
 
+To interact with UAC prompts and Task Manager, assuming you grant admin privledges. (You should)
+Additionally, as of 1.1, the program will not display mouse output if no mouse is plugged in - Windows turns off mouse rendering if no mouse is detected. This can be changed in the registry.
 Note: This project was made by an EE major using AI assistance and minimal python skills. Dont yell at me.
+
