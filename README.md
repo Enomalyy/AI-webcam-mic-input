@@ -1,11 +1,12 @@
 # AI-webcam-mic-input
-Physical mouse and keyboard replacement by using computer vision to track hand gestures and local AI for voice dictation, optimized (as best I can) for lower end systems running windows 10. 
+Physical mouse and keyboard replacement by using computer vision to track hand gestures and local AI for voice dictation, optimized (as best I can) for lower end systems. 
+
+Offline, low resource usage solution for Windows 10 computers lacking, um, everything. 
 
 (This project essentially demonstrates the use of offline AI running on older hardware -  Google's MediaPipe Hands and Faster-Whisper (Int8 Quantization), along with WebRTCVAD to buffer the text for better voice detection.)
 
 Runs silently in the System Tray with a "Headless" option (no video feed) to save resources.
 
-Offline, low resource usage solution for Windows computers lacking, um, everything. 
 
 Useful for mounted monitors, or for projects with minimal need for direct contact. Personally I built for use with an old i5 4200u based system with Tiny10 (https://archive.org/details/tiny-10-NTDEV) as the OS.
 
