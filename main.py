@@ -12,6 +12,7 @@ import camera
 import tracking
 import gui
 import voice
+import keyboard
 
 def start_service():
     if not config.running:
@@ -106,19 +107,28 @@ def quit_app(icon=None, item=None):
         print(f"Warning: Could not sync GUI settings: {e}")
 
     config.save_settings()
-    
+    keyboard.cleanup()
     if icon: 
         icon.stop()
     
     os._exit(0)
 
+def toggle_voice_mode(icon, item):
+    config.VOICE_ALWAYS_ON = not config.VOICE_ALWAYS_ON
+    state = "ON" if config.VOICE_ALWAYS_ON else "OFF"
+    print(f"[Voice] Always-On Mode: {state}")
+    
+    # Optional: Save immediately so it persists if you crash
+    config.save_settings()
+
 def run_tray_icon():
     image = create_tray_icon_image()
     menu = pystray.Menu(
         pystray.MenuItem("Settings", restore_window),
+        pystray.MenuItem("Toggle Voice (Always On)", toggle_voice_mode), # <--- NEW ITEM
         pystray.MenuItem("Exit", quit_app)
     )
-    icon = pystray.Icon("AIMouse", image, "AI Mouse Pro", menu)
+    icon = pystray.Icon("AIMouse", image, "AIInput", menu)
     icon.run()
 
 # --- Entry Point ---

@@ -3,38 +3,9 @@ import mediapipe as mp
 import pyautogui
 import math
 import time
-import config
-import subprocess
-import os
-import winreg
 import ctypes
-
-# --- KEYBOARD COM SCRIPT ---
-# This forces the Windows Tablet Keyboard to toggle properly
-PS_TOGGLE_SCRIPT = r"""
-$code = @'
-using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-public class TouchKeyboardController {
-    [ComImport, Guid("4ce576fa-83dc-4F88-951c-9d0782b4e376")] class UIHostNoLaunch {}
-    [ComImport, Guid("37c994e7-432b-4834-a2f7-dce1f13b834b")] [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    interface ITipInvocation { void Toggle(IntPtr hwnd); }
-    [DllImport("user32.dll", SetLastError = false)] static extern IntPtr GetDesktopWindow();
-    public static void Toggle() {
-        try {
-            UIHostNoLaunch uiHost = new UIHostNoLaunch();
-            ((ITipInvocation)uiHost).Toggle(GetDesktopWindow());
-            Marshal.ReleaseComObject(uiHost);
-        } catch (COMException) {
-            Process.Start(new ProcessStartInfo("TabTip.exe") { UseShellExecute = true });
-        }
-    }
-}
-'@
-Add-Type -TypeDefinition $code -Language CSharp
-[TouchKeyboardController]::Toggle()
-"""
+import config
+import keyboard  # <--- NEW IMPORT
 
 # --- CONFIGURATION ---
 pyautogui.FAILSAFE = False
@@ -43,13 +14,15 @@ pyautogui.PAUSE = 0
 mp_hands = mp.solutions.hands
 hands = None
 pTime = 0
-last_process_time = 0 
 
 # --- STABILITY COUNTERS ---
 pinky_frames = 0
 middle_frames = 0
-voice_frames = 0        
-GESTURE_THRESHOLD = 5   
+GESTURE_THRESHOLD = 5
+
+# --- VOICE STABILITY ---
+voice_grace = 0
+VOICE_MAX_GRACE = 20 
 
 def fast_move(x, y):
     ctypes.windll.user32.SetCursorPos(int(x), int(y))
@@ -59,7 +32,10 @@ def get_dist_sq(p1, p2):
 
 def init_hand_tracking(complexity=0):
     global hands
-    ensure_tablet_mode_enabled()
+    
+    # Initialize the Keyboard Service
+    keyboard.init_service()
+    
     hands = mp_hands.Hands(
         max_num_hands=1,
         model_complexity=complexity,
@@ -67,28 +43,15 @@ def init_hand_tracking(complexity=0):
         min_tracking_confidence=0.7
     )
 
-def ensure_tablet_mode_enabled():
-    try:
-        key_path = r"Software\Microsoft\TabletTip\1.7"
-        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path) as key:
-            winreg.SetValueEx(key, "EnableDesktopModeAutoInvoke", 0, winreg.REG_DWORD, 1)
-    except Exception: pass
-
 def map_range(x, in_min, in_max, out_min, out_max):
     val = (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
     return max(out_min, min(out_max, val))
 
-def toggle_keyboard():
-    try:
-        subprocess.run(["powershell", "-Command", PS_TOGGLE_SCRIPT], creationflags=subprocess.CREATE_NO_WINDOW)
-        config.keyboard_open = not getattr(config, 'keyboard_open', False)
-    except Exception: pass
-
 def process_frame(img):
-    global pTime, pinky_frames, middle_frames, voice_frames
+    global pTime, pinky_frames, middle_frames, voice_grace
     if not hands: return None if config.headless_mode else img
 
-    # --- 1. FLIP FIRST ---
+    # --- 1. FLIP ---
     img = cv2.flip(img, 1) 
     
     h, w, c = img.shape
@@ -96,7 +59,8 @@ def process_frame(img):
     results = hands.process(imgRGB)
 
     config.hand_detected = False
-    
+    gesture_seen_now = False
+
     # Prepare display_img 
     display_img = None
     if not config.headless_mode:
@@ -105,6 +69,33 @@ def process_frame(img):
         fps = 1 / (cTime - pTime) if (cTime - pTime) > 0 else 0
         pTime = cTime
         cv2.putText(display_img, f"FPS: {int(fps)}", (20, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
+
+    # --- CALCULATE 16:9 ACTIVE ZONE ---
+    avail_w = w - (2 * config.SENSITIVITY)
+    avail_h = h - (2 * config.SENSITIVITY)
+    if avail_w < 10: avail_w = 10
+    if avail_h < 10: avail_h = 10
+
+    # Force 16:9
+    target_ratio = 16 / 9
+    box_w = avail_w
+    box_h = box_w / target_ratio
+    
+    if box_h > avail_h:
+        box_h = avail_h
+        box_w = box_h * target_ratio
+
+    center_x = (w // 2) + config.BOX_OFFSET_X
+    center_y = (h // 2) + config.BOX_OFFSET_Y
+
+    half_w = int(box_w / 2)
+    half_h = int(box_h / 2)
+
+    x_min = center_x - half_w
+    x_max = center_x + half_w
+    y_min = center_y - half_h
+    y_max = center_y + half_h
+    # ------------------------------------
 
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
@@ -126,8 +117,8 @@ def process_frame(img):
                 x_pinky_tip, y_pinky_tip = lmList[20]
                 
                 # --- A. MOVEMENT ---
-                x3 = map_range(x_index_tip, config.SENSITIVITY, w - config.SENSITIVITY, 0, config.wScr)
-                y3 = map_range(y_index_tip, config.SENSITIVITY, h - config.SENSITIVITY, 0, config.hScr)
+                x3 = map_range(x_index_tip, x_min, x_max, 0, config.wScr)
+                y3 = map_range(y_index_tip, y_min, y_max, 0, config.hScr)
                 
                 move_delta_sq = (x3 - config.plocX)**2 + (y3 - config.plocY)**2
                 if move_delta_sq > 4.0:
@@ -154,21 +145,19 @@ def process_frame(img):
                         config.dragging = False
 
                 # --- C. GESTURES ---
-                
-                # Keyboard (Middle Finger Extended, Others Down)
-                # Check: Tip above PIP, Tip above Index Tip, Tip above Ring Tip (16)
+                # Keyboard
                 if (y_mid_tip < y_mid_pip - 10) and (y_mid_tip < y_index_tip) and (y_mid_tip < lmList[16][1]):
                     middle_frames += 1
                 else: 
                     middle_frames = 0
                 
                 if middle_frames > GESTURE_THRESHOLD and not getattr(config, 'pinky_triggered', False):
-                    toggle_keyboard()
+                    keyboard.toggle()  # <--- CALLS THE NEW MODULE
                     config.pinky_triggered = True
                 elif middle_frames == 0: 
                     config.pinky_triggered = False
 
-                # Right Click (Pinky)
+                # Right Click
                 if (y_pinky_tip < y_pinky_pip - 10) and (y_pinky_tip < lmList[16][1]):
                     pinky_frames += 1
                 else: 
@@ -180,29 +169,66 @@ def process_frame(img):
                 elif pinky_frames == 0: 
                     config.right_clicked = False
 
-                # Voice (Thumb + Pinky)
+                # Voice (Distance Check)
                 voice_dist_sq = get_dist_sq(lmList[20], lmList[4])
-                config.voice_active_gesture = (voice_dist_sq < (config.CLICK_DIST * scale * 1.2)**2)
+                gesture_seen_now = (voice_dist_sq < (config.CLICK_DIST * scale * 1.2)**2)
 
                 # --- VISUALS ---
                 if display_img is not None:
+                    # White Box
+                    draw_x1 = int(max(0, min(w, x_min)))
+                    draw_y1 = int(max(0, min(h, y_min)))
+                    draw_x2 = int(max(0, min(w, x_max)))
+                    draw_y2 = int(max(0, min(h, y_max)))
+                    cv2.rectangle(display_img, (draw_x1, draw_y1), (draw_x2, draw_y2), (255, 255, 255), 2)
+
+                    # Hand Data
                     cv2.circle(display_img, (x_index_tip, y_index_tip), 8, (0, 255, 255), cv2.FILLED)
                     color = (0, 255, 0) if config.dragging else (0, 0, 255)
                     cv2.line(display_img, (x_thumb, y_thumb), (x_mid_pip, y_mid_pip), color, 2)
                     
-                    if config.voice_active_gesture:
-                         cv2.putText(display_img, "MIC ON", (x_thumb, y_thumb - 30), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0), 2)
                     if getattr(config, 'pinky_triggered', False):
                         cv2.putText(display_img, "KEYBOARD", (x_mid_tip, y_mid_tip-20), cv2.FONT_HERSHEY_PLAIN, 1.5, (255,0,255), 2)
                     if config.right_clicked:
                         cv2.putText(display_img, "R-CLICK", (x_pinky_tip, y_pinky_tip-20), cv2.FONT_HERSHEY_PLAIN, 1.5, (255,0,0), 2)
 
-    # --- LEAK PROTECTION & IDLE VISUALS ---
+    # --- VOICE HYSTERESIS ---
+    if gesture_seen_now:
+        voice_grace = VOICE_MAX_GRACE
+    else:
+        if voice_grace > 0:
+            voice_grace -= 1
+    config.voice_active_gesture = (voice_grace > 0)
+
+    if display_img is not None and config.voice_active_gesture:
+         cv2.putText(display_img, "MIC ON", (50, 100), cv2.FONT_HERSHEY_PLAIN, 3, (0, 255, 255), 3)
+
+    # --- IDLE VISUALS ---
     if not config.hand_detected:
-        config.voice_active_gesture = False
         config.right_clicked = False
         config.pinky_triggered = False
         if display_img is not None:
              cv2.putText(display_img, "NO HAND", (w//2 - 50, h - 30), cv2.FONT_HERSHEY_PLAIN, 2, (100, 100, 100), 2)
+             
+             # Recalculate box for display when no hand
+             avail_w = w - (2 * config.SENSITIVITY)
+             avail_h = h - (2 * config.SENSITIVITY)
+             if avail_w < 10: avail_w = 10
+             if avail_h < 10: avail_h = 10
+             
+             box_w = avail_w
+             box_h = box_w / (16/9)
+             if box_h > avail_h:
+                 box_h = avail_h
+                 box_w = box_h * (16/9)
+
+             cx = (w // 2) + config.BOX_OFFSET_X
+             cy = (h // 2) + config.BOX_OFFSET_Y
+             
+             d_x1 = int(max(0, min(w, cx - box_w/2)))
+             d_y1 = int(max(0, min(h, cy - box_h/2)))
+             d_x2 = int(max(0, min(w, cx + box_w/2)))
+             d_y2 = int(max(0, min(h, cy + box_h/2)))
+             cv2.rectangle(display_img, (d_x1, d_y1), (d_x2, d_y2), (255, 255, 255), 2)
 
     return display_img

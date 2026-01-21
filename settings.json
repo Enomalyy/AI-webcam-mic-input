@@ -1,14 +1,20 @@
 {
-    "SENSITIVITY": 134,
-    "SMOOTHING": 3.0,
-    "CLICK_DIST": 20,
-    "RELEASE_DIST": 28,
+    "SENSITIVITY": 90,
+    "SMOOTHING": 4.0,
+    "CLICK_DIST": 25,
+    "RELEASE_DIST": 30,
     "DEPTH_SCALE": 0.8,
     "RESOLUTION_ID": 0,
     "MODEL_COMPLEXITY": 0,
-    "HEADLESS_DEFAULT": false,
+    "HEADLESS_DEFAULT": true,
     "AUTO_START": true,
     "AUDIO_START": true,
     "voice_enabled": true,
-    "CAMERA_FPS": 26
+    "CAMERA_FPS": 30,
+    "USE_MJPG": false,
+    "AUTO_EXPOSURE": true,
+    "EXPOSURE_VAL": -3,
+    "BOX_OFFSET_X": 0,
+    "BOX_OFFSET_Y": -85,
+    "VOICE_ALWAYS_ON": false
 }

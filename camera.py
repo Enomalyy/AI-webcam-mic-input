@@ -1,42 +1,65 @@
 import cv2
-import time
 import config
 
+# --- GLOBALS ---
 cap = None
 
-def init_camera(res_id):
+# Define available resolutions (Must match GUI IDs)
+RESOLUTIONS = {
+    0: (640, 480),   # Low Res (Fastest)
+    1: (1280, 720)   # High Res (Better Tracking)
+}
+
+def init_camera(res_id=0):
     global cap
-    # Using CAP_DSHOW is faster on Windows, but sometimes unstable. 
-    # If crashes persist, try removing '+ cv2.CAP_DSHOW'
-    cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+    if cap is not None:
+        cap.release()
     
-    cap.set(cv2.CAP_PROP_FPS, config.CAMERA_FPS)
+    # Force DirectShow (Standard for Windows)
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     
-    width = 10000 if res_id == 1 else 640
-    height = 10000 if res_id == 1 else 480
+    # --- 1. MJPG COMPRESSION ---
+    if config.USE_MJPG:
+        try:
+            fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+            cap.set(cv2.CAP_PROP_FOURCC, fourcc)
+            print("[Camera] MJPG Compression ENABLED")
+        except:
+            print("[Camera] Warning: MJPG not supported.")
+    else:
+        print("[Camera] MJPG Compression DISABLED (Standard)")
+
+    # --- 2. RESOLUTION & FPS ---
+    width, height = RESOLUTIONS.get(res_id, (640, 480))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    
+    cap.set(cv2.CAP_PROP_FPS, config.CAMERA_FPS)
+    print(f"[Camera] Requested FPS: {config.CAMERA_FPS}")
+
+    # --- 3. EXPOSURE (Default to Auto) ---
+    # We now rely on the user opening the Settings Panel to fix Low Light Comp
+    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75) # Auto
+
+    if not cap.isOpened():
+        print("Error: Could not open camera.")
+
+def open_settings_panel():
+    """Opens the Windows Native Camera Settings Dialog"""
+    global cap
+    if cap and cap.isOpened():
+        # This magic command forces the driver window to appear
+        cap.set(cv2.CAP_PROP_SETTINGS, 1)
 
 def read_frame():
     global cap
     if cap is None or not cap.isOpened():
         return False, None
-    
-    try:
-        success, frame = cap.read()
-        if not success:
-            return False, None
-        return True, frame
-        
-    except cv2.error as e:
-        print(f"OpenCV Error (Ignored): {e}")
-        # Return failure so the main loop can decide to re-init or wait
-        return False, None
-    except Exception as e:
-        print(f"Camera General Error: {e}")
-        return False, None
+    success, img = cap.read()
+    return success, img
 
 def is_camera_active():
+    global cap
     return cap is not None and cap.isOpened()
 
 def release_camera():

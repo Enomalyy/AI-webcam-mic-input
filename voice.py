@@ -126,7 +126,7 @@ def processing_loop():
                                    channels=1, 
                                    callback=audio_callback):
                 
-                print("[Voice] Stream Started. Waiting for gesture...")
+                print("[Voice] Stream Started. Waiting for trigger...")
                 
                 while config.voice_enabled:
                     # 1. Get audio frame (blocking wait)
@@ -135,19 +135,21 @@ def processing_loop():
                     except queue.Empty:
                         continue
                     
-                    # 2. GESTURE CHECK (The Gating Layer)
-                    # If user is NOT holding the gesture, we reset everything.
-                    if not config.voice_active_gesture:
+                    # 2. TRIGGER GATE (The Logic Change)
+                    # We listen if:
+                    # A. The Camera sees the gesture (Thumb+Pinky)
+                    # B. OR The "Always On" checkbox is checked
+                    should_listen = config.voice_active_gesture or config.VOICE_ALWAYS_ON
+
+                    if not should_listen:
+                        # If we shouldn't be listening, reset any active recording
                         if triggered:
-                            # If we WERE recording and user let go, maybe we process?
-                            # For safety/cleanliness, we dump it. 
-                            # If you want "Release-to-Send", change this block.
                             buffer.clear()
                             triggered = False
                             config.voice_status = "IDLE"
                         continue
 
-                    # 3. VAD Check
+                    # 3. VAD Check (Is anyone actually speaking?)
                     is_speech = vad.is_speech(frame, SAMPLE_RATE)
 
                     if not triggered:

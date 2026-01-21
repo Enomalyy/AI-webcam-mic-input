@@ -12,6 +12,7 @@ import camera
 import tracking
 import gui
 import voice
+import keyboard
 
 def start_service():
     if not config.running:
@@ -106,7 +107,7 @@ def quit_app(icon=None, item=None):
         print(f"Warning: Could not sync GUI settings: {e}")
 
     config.save_settings()
-    
+    keyboard.cleanup()
     if icon: 
         icon.stop()
     

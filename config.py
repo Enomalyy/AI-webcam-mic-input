@@ -12,7 +12,7 @@ SETTINGS_FILE = "settings.json"
 # --- DEFAULT USER SETTINGS ---
 AUTO_START = True       
 HEADLESS_DEFAULT = True 
-AUDIO_START = False     # <--- NEW: Default to False if missing
+AUDIO_START = False     
 RESOLUTION_ID = 0  
 MODEL_COMPLEXITY = 0 
 SENSITIVITY = 90
@@ -20,16 +20,24 @@ SMOOTHING = 4.0
 CLICK_DIST = 27
 RELEASE_DIST = 40
 DEPTH_SCALE = 0.8
-CAMERA_FPS = 30  # Default to 30
+CAMERA_FPS = 30  
+USE_MJPG = False 
+AUTO_EXPOSURE = True   
+EXPOSURE_VAL = -3
+GAIN_VAL = 64
+BOX_OFFSET_X = 0   # Horizontal Shift
+BOX_OFFSET_Y = 0   # Vertical Shift
 
 # --- SYSTEM STATE ---
 running = False         
 video_visible = False
 headless_mode = True    
+hand_detected = False
 
 # --- MOUSE STATE ---
 wScr, hScr = pyautogui.size()
 plocX, plocY = 0, 0
+clocX, clocY = 0, 0
 dragging = False
 
 # --- GESTURE FLAGS ---
@@ -39,6 +47,7 @@ keyboard_open = False
 voice_enabled = False       
 voice_active_gesture = False 
 voice_status = "IDLE"
+VOICE_ALWAYS_ON = False
 
 # --- PERSISTENCE LOGIC ---
 def save_settings():
@@ -52,9 +61,16 @@ def save_settings():
         "MODEL_COMPLEXITY": MODEL_COMPLEXITY,
         "HEADLESS_DEFAULT": HEADLESS_DEFAULT,
         "AUTO_START": AUTO_START,
-        "AUDIO_START": AUDIO_START, # <--- NEW: Save the preference
-        "voice_enabled": voice_enabled ,
-        "CAMERA_FPS": CAMERA_FPS
+        "AUDIO_START": AUDIO_START, 
+        "voice_enabled": voice_enabled,
+        "CAMERA_FPS": CAMERA_FPS,
+        # --- NEW PERSISTENT SETTINGS ---
+        "USE_MJPG": USE_MJPG,
+        "AUTO_EXPOSURE": AUTO_EXPOSURE,
+        "EXPOSURE_VAL": EXPOSURE_VAL,
+        "BOX_OFFSET_X": BOX_OFFSET_X,
+        "BOX_OFFSET_Y": BOX_OFFSET_Y,
+        "VOICE_ALWAYS_ON": VOICE_ALWAYS_ON
     }
     try:
         with open(SETTINGS_FILE, 'w') as f:
@@ -68,6 +84,10 @@ def load_settings():
     global RESOLUTION_ID, MODEL_COMPLEXITY, HEADLESS_DEFAULT, AUTO_START, AUDIO_START
     global headless_mode, voice_enabled 
     global CAMERA_FPS
+    # Import the new globals so we can write to them
+    global USE_MJPG, AUTO_EXPOSURE, EXPOSURE_VAL, BOX_OFFSET_X, BOX_OFFSET_Y
+    global BOX_OFFSET_X, BOX_OFFSET_Y
+    global VOICE_ALWAYS_ON
     
     if os.path.exists(SETTINGS_FILE):
         try:
@@ -83,11 +103,16 @@ def load_settings():
             MODEL_COMPLEXITY = data.get("MODEL_COMPLEXITY", MODEL_COMPLEXITY)
             HEADLESS_DEFAULT = data.get("HEADLESS_DEFAULT", HEADLESS_DEFAULT)
             AUTO_START = data.get("AUTO_START", AUTO_START)
-            AUDIO_START = data.get("AUDIO_START", AUDIO_START) # <--- NEW: Load preference
-            CAMERA_FPS = data.get("CAMERA_FPS", 30)
+            AUDIO_START = data.get("AUDIO_START", AUDIO_START)
+            CAMERA_FPS = data.get("CAMERA_FPS", CAMERA_FPS)
             
-            # Use AUDIO_START to determine initial voice state
-            # If AUDIO_START is True, we force voice_enabled to True
+            # --- LOAD NEW SETTINGS ---
+            USE_MJPG = data.get("USE_MJPG", USE_MJPG)
+            AUTO_EXPOSURE = data.get("AUTO_EXPOSURE", AUTO_EXPOSURE)
+            EXPOSURE_VAL = data.get("EXPOSURE_VAL", EXPOSURE_VAL)
+            BOX_OFFSET_X = data.get("BOX_OFFSET_X", BOX_OFFSET_X)
+            BOX_OFFSET_Y = data.get("BOX_OFFSET_Y", BOX_OFFSET_Y)
+            
             if AUDIO_START:
                 voice_enabled = True
             else:
