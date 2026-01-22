@@ -13,6 +13,8 @@ import tracking
 import gui
 import voice
 import keyboard
+# Removed: import visual_cursor / cursor_engine
+import actions
 
 def start_service():
     if not config.running:
@@ -33,8 +35,8 @@ def main_loop():
             # --- STARTUP LOGIC ---
             if not camera.is_camera_active():
                 print("Initializing Hardware & AI...")
-                # camera.init_camera now includes the 30 FPS hardware cap logic
                 camera.init_camera(config.RESOLUTION_ID)
+                # Tracking Init is safe here now
                 tracking.init_hand_tracking(config.MODEL_COMPLEXITY)
                 continue
 
@@ -42,7 +44,6 @@ def main_loop():
             success, frame = camera.read_frame()
             if success:
                 # 1. Process Frame (AI)
-                # Note: tracking.process_frame should now update config.hand_detected
                 processed_frame = tracking.process_frame(frame)
                 
                 # 2. Power Saving / Idle Logic
@@ -54,11 +55,9 @@ def main_loop():
                     idle_mode = (time.time() - last_hand_time) > 2.0
 
                 if idle_mode:
-                    # Drop to ~10 FPS to save CPU while searching for a hand
                     time.sleep(0.1) 
                 
                 # 3. Display Logic
-                # If headless, processed_frame will be None to save drawing cycles
                 if not config.headless_mode and processed_frame is not None:
                     cv2.imshow("AI Mouse Camera", processed_frame)
                     config.video_visible = True
@@ -78,14 +77,15 @@ def main_loop():
                 print("Shutting down Hardware...")
                 camera.release_camera()
                 cv2.destroyAllWindows()
+                actions.release_all() # Ensure clicks are released
                 config.video_visible = False
             
-            time.sleep(0.5) # Deep sleep when not running
+            time.sleep(0.5)
 
 def toggle_headless(is_headless):
     config.headless_mode = bool(is_headless)
     config.HEADLESS_DEFAULT = config.headless_mode
-   
+    
 
 # --- System Tray Logic ---
 def create_tray_icon_image():
@@ -117,15 +117,13 @@ def toggle_voice_mode(icon, item):
     config.VOICE_ALWAYS_ON = not config.VOICE_ALWAYS_ON
     state = "ON" if config.VOICE_ALWAYS_ON else "OFF"
     print(f"[Voice] Always-On Mode: {state}")
-    
-    # Optional: Save immediately so it persists if you crash
     config.save_settings()
 
 def run_tray_icon():
     image = create_tray_icon_image()
     menu = pystray.Menu(
         pystray.MenuItem("Settings", restore_window),
-        pystray.MenuItem("Toggle Voice (Always On)", toggle_voice_mode), # <--- NEW ITEM
+        pystray.MenuItem("Toggle Voice (Always On)", toggle_voice_mode),
         pystray.MenuItem("Exit", quit_app)
     )
     icon = pystray.Icon("AIMouse", image, "AIInput", menu)
